@@ -1,7 +1,7 @@
 ---
 import Layout from '../layouts/base.astro'
 import Header from '../components/header.astro'
-import { getChannelInfo } from '../lib/telegram'
+import { getAllTags, getChannelInfo } from '../lib/telegram'
 import { getEnv } from '../lib/env'
 
 const channel = await getChannelInfo(Astro)
@@ -10,7 +10,18 @@ channel.seo = {
   title: 'Tags',
 }
 
-const tags = (getEnv(import.meta.env, Astro, 'TAGS') || '').split(',')
+const envTags = (getEnv(import.meta.env, Astro, 'TAGS') || '')
+  .split(',')
+  .map(tag => String(tag || '').trim().replace(/^#/, ''))
+  .filter(Boolean)
+const fullTagStats = await getAllTags(Astro)
+const mergedTagStats = new Map(fullTagStats.map(({ tag, count }) => [tag, count]))
+for (const tag of envTags) {
+  if (!mergedTagStats.has(tag)) mergedTagStats.set(tag, 0)
+}
+const tags = Array.from(mergedTagStats.entries())
+  .sort((a, b) => a[0].length - b[0].length || a[0].localeCompare(b[0]))
+  .map(([tag, count]) => ({ tag, count }))
 ---
 
 <Layout channel={channel} id="main-container">
@@ -20,15 +31,13 @@ const tags = (getEnv(import.meta.env, Astro, 'TAGS') || '').split(',')
 
   <div class="section-title">Tags</div>
 
-  <div class="tag-cloud">
+  <div class="tag-grid">
     {
-      tags.map((tag: string) => (
-        <div class="tag-cloud-item">
-          <a href={`/search/%23${tag}`} class="tag">
-            {tag}
-          </a>
-          {/* <span class="tag-cloud-item-count">0</span> */}
-        </div>
+      tags.map(({ tag, count }) => (
+        <a href={`/search/%23${tag}`} class="tag-grid-item">
+          <span class="tag-grid-name">{tag}</span>
+          <span class="tag-grid-count">{count}</span>
+        </a>
       ))
     }
   </div>

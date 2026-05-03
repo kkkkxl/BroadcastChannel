@@ -229,3 +229,43 @@ export async function getChannelInfo(Astro, { before = '', after = '', q = '', t
   cache.set(cacheKey, channelInfo)
   return channelInfo
 }
+
+export async function getAllTags(Astro) {
+  const cacheKey = 'all-tags'
+  const cachedResult = cache.get(cacheKey)
+  if (cachedResult) {
+    return JSON.parse(JSON.stringify(cachedResult))
+  }
+
+  const tagCount = new Map()
+  let before = ''
+  let guard = 0
+  const maxPages = Number(getEnv(import.meta.env, Astro, 'TAG_SCAN_MAX_PAGES') || 200)
+
+  while (guard < maxPages) {
+    guard += 1
+    const channel = await getChannelInfo(Astro, { before })
+    const posts = channel?.posts || []
+    if (posts.length === 0) {
+      break
+    }
+
+    for (const post of posts) {
+      for (const tag of post?.tags || []) {
+        const normalized = String(tag || '').trim().replace(/^#/, '')
+        if (!normalized) continue
+        tagCount.set(normalized, (tagCount.get(normalized) || 0) + 1)
+      }
+    }
+
+    const nextBefore = posts[posts.length - 1]?.id
+    if (!nextBefore || nextBefore <= 1 || String(nextBefore) === String(before)) {
+      break
+    }
+    before = nextBefore
+  }
+
+  const result = Array.from(tagCount.entries()).map(([tag, count]) => ({ tag, count }))
+  cache.set(cacheKey, result)
+  return result
+}
