@@ -4,15 +4,18 @@ import Header from '../components/header.astro'
 import { getAllTags, getChannelInfo } from '../lib/telegram'
 import { getEnv } from '../lib/env'
 
-const channel = await getChannelInfo(Astro)
-
-channel.seo = {
-  title: 'Tags',
+const channel = {
+  ...(await getChannelInfo(Astro)),
+  seo: { title: 'Tags' },
 }
 
 const envTags = (getEnv(import.meta.env, Astro, 'TAGS') || '')
   .split(',')
-  .map(tag => String(tag || '').trim().replace(/^#/, ''))
+  .map((tag) =>
+    String(tag || '')
+      .trim()
+      .replace(/^#/, ''),
+  )
   .filter(Boolean)
 const fullTagStats = await getAllTags(Astro)
 const mergedTagStats = new Map(fullTagStats.map(({ tag, count }) => [tag, count]))

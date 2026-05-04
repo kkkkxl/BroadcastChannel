@@ -20,7 +20,7 @@ function getVideoStickers($, item, { staticProxy, index }) {
     return `
     <div style="background-image: none; width: 256px;">
       <video src="${staticProxy + url}" width="100%" height="100%" alt="Video Sticker" preload muted autoplay loop playsinline disablepictureinpicture >
-        <img class="sticker" src="${staticProxy + imgurl}" alt="Video Sticker" loading="${index > 15 ? 'eager' : 'lazy'}" />
+        <img class="sticker" src="${staticProxy + imgurl}" alt="Video Sticker" loading="${index > 15 ? 'lazy' : 'eager'}" />
       </video>
     </div>
     `
@@ -30,7 +30,7 @@ function getVideoStickers($, item, { staticProxy, index }) {
 function getImageStickers($, item, { staticProxy, index }) {
   return $(item).find('.tgme_widget_message_sticker')?.map((_index, image) => {
     const url = $(image)?.attr('data-webp')
-    return `<img class="sticker" src="${staticProxy + url}" style="width: 256px;" alt="Sticker" loading="${index > 15 ? 'eager' : 'lazy'}" />`
+    return `<img class="sticker" src="${staticProxy + url}" style="width: 256px;" alt="Sticker" loading="${index > 15 ? 'lazy' : 'eager'}" />`
   })?.get()?.join('')
 }
 
@@ -40,7 +40,7 @@ function getImages($, item, { staticProxy, id, index, title }) {
     const popoverId = `modal-${id}-${_index}`
     return `
       <button class="image-preview-button image-preview-wrap" popovertarget="${popoverId}" popovertargetaction="show">
-        <img src="${staticProxy + url}" alt="${title}" loading="${index > 15 ? 'eager' : 'lazy'}" />
+        <img src="${staticProxy + url}" alt="${title}" loading="${index > 15 ? 'lazy' : 'eager'}" />
       </button>
       <button class="image-preview-button modal" id="${popoverId}" popovertarget="${popoverId}" popovertargetaction="hide" popover>
         <img class="modal-img" src="${staticProxy + url}" alt="${title}" loading="lazy" />
@@ -50,18 +50,17 @@ function getImages($, item, { staticProxy, id, index, title }) {
   return images.length ? `<div class="image-list-container ${images.length % 2 === 0 ? 'image-list-even' : 'image-list-odd'}">${images?.join('')}</div>` : ''
 }
 
-function getVideo($, item, { staticProxy, index }) {
-  const video = $(item).find('.tgme_widget_message_video_wrap video')
-  video?.attr('src', staticProxy + video?.attr('src'))
+function applyVideoAttrs(el, { staticProxy, index }) {
+  el?.attr('src', staticProxy + el?.attr('src'))
     ?.attr('controls', true)
-    ?.attr('preload', index > 15 ? 'auto' : 'metadata')
+    ?.attr('preload', index > 15 ? 'metadata' : 'auto')
     ?.attr('playsinline', true).attr('webkit-playsinline', true)
+  return el
+}
 
-  const roundVideo = $(item).find('.tgme_widget_message_roundvideo_wrap video')
-  roundVideo?.attr('src', staticProxy + roundVideo?.attr('src'))
-    ?.attr('controls', true)
-    ?.attr('preload', index > 15 ? 'auto' : 'metadata')
-    ?.attr('playsinline', true).attr('webkit-playsinline', true)
+function getVideo($, item, { staticProxy, index }) {
+  const video = applyVideoAttrs($(item).find('.tgme_widget_message_video_wrap video'), { staticProxy, index })
+  const roundVideo = applyVideoAttrs($(item).find('.tgme_widget_message_roundvideo_wrap video'), { staticProxy, index })
   return $.html(video) + $.html(roundVideo)
 }
 
@@ -82,7 +81,7 @@ function getLinkPreview($, item, { staticProxy, index }) {
   const image = $(item).find('.link_preview_image')
   const src = image?.attr('style')?.match(/url\(["'](.*?)["']/i)?.[1]
   const imageSrc = src ? staticProxy + src : ''
-  image?.replaceWith(`<img class="link_preview_image" alt="${title}" src="${imageSrc}" loading="${index > 15 ? 'eager' : 'lazy'}" />`)
+  image?.replaceWith(`<img class="link_preview_image" alt="${title}" src="${imageSrc}" loading="${index > 15 ? 'lazy' : 'eager'}" />`)
   return $.html(link)
 }
 
@@ -153,7 +152,6 @@ function getPost($, item, { channel, staticProxy, index = 0 }) {
       content?.html(),
       getImageStickers($, item, { staticProxy, index }),
       getVideoStickers($, item, { staticProxy, index }),
-      // $(item).find('.tgme_widget_message_sticker_wrap')?.html(),
       $(item).find('.tgme_widget_message_poll')?.html(),
       $.html($(item).find('.tgme_widget_message_document_wrap')),
       $.html($(item).find('.tgme_widget_message_video_player.not_supported')),
@@ -171,39 +169,40 @@ function getPost($, item, { channel, staticProxy, index = 0 }) {
   }
 }
 
-const unnessaryHeaders = ['host', 'cookie', 'origin', 'referer']
+const allowedForwardHeaders = ['accept-language', 'user-agent']
 
-export async function getChannelInfo(Astro, { before = '', after = '', q = '', type = 'list', id = '' } = {}) {
-  const cacheKey = JSON.stringify({ before, after, q, type, id })
+export async function getChannelInfo(Astro, { before = '', after = '', q = '', id = '' } = {}) {
+  const cacheKey = JSON.stringify({ before, after, q, id })
   const cachedResult = cache.get(cacheKey)
 
   if (cachedResult) {
-    console.info('Match Cache', { before, after, q, type, id })
-    return JSON.parse(JSON.stringify(cachedResult))
+    console.info('Match Cache', { before, after, q, id })
+    return cachedResult
   }
 
   // Where t.me can also be telegram.me, telegram.dog
   const host = getEnv(import.meta.env, Astro, 'TELEGRAM_HOST') ?? 't.me'
   const channel = getEnv(import.meta.env, Astro, 'CHANNEL')
-  const staticProxy = getEnv(import.meta.env, Astro, 'STATIC_PROXY') ?? '/static/'
+  const staticProxy = Astro.locals.STATIC_PROXY
 
   const url = id ? `https://${host}/${channel}/${id}?embed=1&mode=tme` : `https://${host}/s/${channel}`
-  const headers = Object.fromEntries(Astro.request.headers)
+  const reqHeaders = Astro.request.headers
+  const headers = Object.fromEntries(
+    allowedForwardHeaders
+      .filter(key => reqHeaders.has(key))
+      .map(key => [key, reqHeaders.get(key)]),
+  )
 
-  Object.keys(headers).forEach((key) => {
-    if (unnessaryHeaders.includes(key)) {
-      delete headers[key]
-    }
-  })
-
-  console.info('Fetching', url, { before, after, q, type, id })
+  console.info('Fetching', url, { before, after, q, id })
   const html = await $fetch(url, {
     headers,
-    query: {
-      before: before || undefined,
-      after: after || undefined,
-      q: q || undefined,
-    },
+    query: id
+      ? undefined
+      : {
+          before: before || undefined,
+          after: after || undefined,
+          q: q || undefined,
+        },
     retry: 3,
     retryDelay: 100,
   })
@@ -234,7 +233,7 @@ export async function getAllTags(Astro) {
   const cacheKey = 'all-tags'
   const cachedResult = cache.get(cacheKey)
   if (cachedResult) {
-    return JSON.parse(JSON.stringify(cachedResult))
+    return cachedResult
   }
 
   const tagCount = new Map()
@@ -253,7 +252,8 @@ export async function getAllTags(Astro) {
     for (const post of posts) {
       for (const tag of post?.tags || []) {
         const normalized = String(tag || '').trim().replace(/^#/, '')
-        if (!normalized) continue
+        if (!normalized)
+          continue
         tagCount.set(normalized, (tagCount.get(normalized) || 0) + 1)
       }
     }

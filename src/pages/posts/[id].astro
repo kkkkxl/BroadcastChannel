@@ -1,25 +1,17 @@
 ---
-import { getEnv } from '../../lib/env'
 import voidFile from '../../assets/void.png'
 import List from '../../components/list.astro'
 import { getChannelInfo } from '../../lib/telegram'
 
-const { SITE_URL } = Astro.locals
+const { SITE_URL, STATIC_PROXY: staticProxy } = Astro.locals
 
-const channelInfo = await getChannelInfo(Astro)
-
-const post = await getChannelInfo(Astro, {
-  type: 'post',
-  id: Astro.params.id,
-})
+const [channelInfo, post] = await Promise.all([getChannelInfo(Astro), getChannelInfo(Astro, { id: Astro.params.id })])
 
 const channel = {
   ...(channelInfo || {}),
   posts: [post],
   seo: post,
 }
-
-const staticProxy = getEnv(import.meta.env, Astro, 'STATIC_PROXY') ?? '/static/'
 ---
 
 <List channel={channel} before={false} after={false} isItem={true}>

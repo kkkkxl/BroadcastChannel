@@ -12,7 +12,7 @@ export async function GET({ request, params, url }) {
   try {
     const target = new URL(params.url + url.search)
     if (!targetWhitelist.some(domain => target.hostname.endsWith(domain))) {
-      return Response.redirect(target.toString(), 302)
+      return new Response('Forbidden', { status: 403 })
     }
     const response = await fetch(target.toString(), request)
     return new Response(response.body, response)

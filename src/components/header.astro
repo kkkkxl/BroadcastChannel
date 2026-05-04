@@ -10,18 +10,16 @@ import telegram from '../assets/telegram.svg'
 import mastodon from '../assets/mastodon.svg'
 import bluesky from '../assets/bluesky.svg'
 
-const { SITE_URL, RSS_URL } = Astro.locals
+const { SITE_URL, RSS_URL, STATIC_PROXY: staticProxy } = Astro.locals
 const { channel } = Astro.props
 
-const PODCASRT = getEnv(import.meta.env, Astro, 'PODCASRT')
+const PODCAST = getEnv(import.meta.env, Astro, 'PODCAST')
 const TWITTER = getEnv(import.meta.env, Astro, 'TWITTER')
 const GITHUB = getEnv(import.meta.env, Astro, 'GITHUB')
 const TELEGRAM = getEnv(import.meta.env, Astro, 'TELEGRAM')
 const DISCORD = getEnv(import.meta.env, Astro, 'DISCORD')
 const MASTODON = getEnv(import.meta.env, Astro, 'MASTODON')
 const BLUESKY = getEnv(import.meta.env, Astro, 'BLUESKY')
-
-const staticProxy = getEnv(import.meta.env, Astro, 'STATIC_PROXY') ?? '/static/'
 ---
 
 <div id="header">
@@ -44,8 +42,8 @@ const staticProxy = getEnv(import.meta.env, Astro, 'STATIC_PROXY') ?? '/static/'
     </a>
 
     {
-      PODCASRT && (
-        <a href={PODCASRT} target="_blank" title="Podcast">
+      PODCAST && (
+        <a href={PODCAST} target="_blank" title="Podcast">
           <img {...podcast} alt="Podcast" class="social-icon" width="1em" />
         </a>
       )
