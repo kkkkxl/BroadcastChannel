@@ -4,19 +4,31 @@ import Header from '../components/header.astro'
 import Item from '../components/item.astro'
 
 const { SITE_URL } = Astro.locals
-const { channel, before = true, after = true, isItem = false } = Astro.props
+const channel = Astro.props.channel
+const before = Astro.props.before ?? true
+const after = Astro.props.after ?? true
+const isItem = Astro.props.isItem ?? false
+const title = Astro.props.title ?? ''
+const subtitle = Astro.props.subtitle ?? ''
 const posts = channel.posts ?? []
 
 const beforeCursor = posts[posts.length - 1]?.id
 const afterCursor = posts[0]?.id
-// const cursor = +Astro.params.cursor
 ---
 
 <Layout channel={channel} id="main-container">
   <slot name="header">
     <Header channel={channel} />
   </slot>
-  <div class="items">
+  {
+    title && (
+      <div class="page-hero">
+        <h1 class="page-hero-title">{title}</h1>
+        {subtitle ? <p class="page-hero-subtitle">{subtitle}</p> : null}
+      </div>
+    )
+  }
+  <div class={`items ${isItem ? 'items-single' : 'items-feed'}`}>
     {posts.map((post) => <Item post={post} isItem={isItem} />)}
   </div>
 

@@ -92,51 +92,72 @@ const navs = (getEnv(import.meta.env, Astro, 'NAVS') || '')
 
   <body>
     <div id="wrapper">
+      <div id="global-nav">
+        <div class="global-nav-inner">
+          <a href={SITE_URL} class="global-nav-brand" title={channel?.title}>
+            {channel?.title}
+          </a>
+          <div class="global-nav-links">
+            <a href={SITE_URL} class={`global-nav-link ${pathname === '/' ? 'current' : ''}`}>Home</a>
+            <a href={`${SITE_URL}tags`} class={`global-nav-link ${pathname === '/tags' ? 'current' : ''}`}>Tag</a>
+            {
+              LINKS ? (
+                <a href={`${SITE_URL}links`} class={`global-nav-link ${pathname === '/links' ? 'current' : ''}`}>
+                  Links
+                </a>
+              ) : null
+            }
+          </div>
+        </div>
+      </div>
       <div id="container">
         <div id="main-container">
           <slot />
         </div>
         <div id="aside-container">
           <slot name="aside">
-            <div class="nav">
-              <div class="nav-item">
-                <a href={SITE_URL} title={channel?.title} class={`nav-link ${pathname === '/' ? 'current' : ''}`}>
-                  Home
-                </a>
+            <div class="aside-card">
+              <div class="aside-title">Navigate</div>
+              <div class="nav">
+                <div class="nav-item">
+                  <a href={SITE_URL} title={channel?.title} class={`nav-link ${pathname === '/' ? 'current' : ''}`}>
+                    Home
+                  </a>
+                </div>
+                <div class="nav-item">
+                  <a href={`${SITE_URL}tags`} title="Tag" class={`nav-link ${pathname === '/tags' ? 'current' : ''}`}>
+                    Tag
+                  </a>
+                </div>
+                {
+                  LINKS ? (
+                    <div class="nav-item">
+                      <a
+                        href={`${SITE_URL}links`}
+                        title="Links"
+                        class={`nav-link ${pathname === '/links' ? 'current' : ''}`}
+                      >
+                        Links
+                      </a>
+                    </div>
+                  ) : null
+                }
+                {
+                  navs.map((nav) => (
+                    <div class="nav-item">
+                      <a href={nav.href} title={nav.title} target="_blank" rel="noopener" class="nav-link">
+                        {nav.title}
+                      </a>
+                    </div>
+                  ))
+                }
               </div>
-              <div class="nav-item">
-                <a href={`${SITE_URL}tags`} title="Tag" class={`nav-link ${pathname === '/tags' ? 'current' : ''}`}>
-                  Tag
-                </a>
-              </div>
-              {
-                LINKS ? (
-                  <div class="nav-item">
-                    <a
-                      href={`${SITE_URL}links`}
-                      title="Links"
-                      class={`nav-link ${pathname === '/links' ? 'current' : ''}`}
-                    >
-                      Links
-                    </a>
-                  </div>
-                ) : null
-              }
-              {
-                navs.map((nav) => (
-                  <div class="nav-item">
-                    <a href={nav.href} title={nav.title} target="_blank" rel="noopener" class="nav-link">
-                      {nav.title}
-                    </a>
-                  </div>
-                ))
-              }
+              <input class="search-icon" name="icon" type="checkbox" placeholder="Search" />
+              <form class="search-form" action={searchAction} method="get">
+                {GOOGLE_SEARCH_SITE ? <input type="hidden" name="as_sitesearch" value={GOOGLE_SEARCH_SITE} /> : null}
+                <input type="text" name="q" placeholder="Search" />
+              </form>
             </div>
-            <input class="search-icon" name="icon" type="checkbox" placeholder="Search" />
-            <form class="search-form" action={searchAction} method="get">
-              {GOOGLE_SEARCH_SITE ? <input type="hidden" name="as_sitesearch" value={GOOGLE_SEARCH_SITE} /> : null}
-              <input type="text" name="q" placeholder="Search" />
-            </form>
           </slot>
         </div>
       </div>

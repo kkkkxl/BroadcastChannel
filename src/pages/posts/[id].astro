@@ -15,17 +15,20 @@ const channel = {
 ---
 
 <List channel={channel} before={false} after={false} isItem={true}>
-  <div slot="header" id="breadcrumb">
-    <img
-      src={channel?.avatar?.startsWith('http') ? staticProxy + channel?.avatar : voidFile.src}
-      alt={channel?.title}
-      loading="eager"
-      class="breadcrumb-avatar"
-    />
-    <div class="breadcrumb-title">
-      <a href={SITE_URL} class="site-title" title={channel?.title}>
-        {channel.title}
-      </a>
+  <div slot="header" class="post-hero">
+    <div id="breadcrumb">
+      <img
+        src={channel?.avatar?.startsWith('http') ? staticProxy + channel?.avatar : voidFile.src}
+        alt={channel?.title}
+        loading="eager"
+        class="breadcrumb-avatar"
+      />
+      <div class="breadcrumb-title">
+        <a href={SITE_URL} class="site-title" title={channel?.title}>
+          {channel.title}
+        </a>
+      </div>
     </div>
+    <h1 class="post-hero-title">Post Detail</h1>
   </div>
 </List>

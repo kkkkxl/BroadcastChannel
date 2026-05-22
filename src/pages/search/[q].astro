@@ -9,4 +9,10 @@ const channel = {
 }
 ---
 
-<List channel={channel} before={false} after={false} />
+<List
+  channel={channel}
+  before={false}
+  after={false}
+  title={`Search: ${q || 'All'}`}
+  subtitle="Filtered timeline results"
+/>
